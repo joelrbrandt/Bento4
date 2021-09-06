@@ -204,27 +204,9 @@ main(int argc, char** argv)
 {
     int return_value = 1;
     
-    if (argc < 3) {
-        PrintUsageAndExit();
-    }
-    
     // parse command line
     AP4_Result result;
-    char** args = argv+1;
-    unsigned char key[16];
     bool          key_option = false;
-    if (!strcmp(*args, "--key")) {
-        if (argc != 5) {
-            fprintf(stderr, "ERROR: invalid command line\n");
-            return 1;
-        }
-        ++args;
-        if (AP4_ParseHex(*args++, key, 16)) {
-            fprintf(stderr, "ERROR: invalid hex format for key\n");
-            return 1;
-        }
-        key_option = true;
-    }
 
     AP4_ByteStream* input  = NULL;
     AP4_File* input_file   = NULL;
@@ -233,14 +215,14 @@ main(int argc, char** argv)
     AP4_Track*      audio_track = NULL;
 
 	// create the input stream
-    result = AP4_FileByteStream::Create(*args++, AP4_FileByteStream::STREAM_MODE_READ, input);
+    result = AP4_FileByteStream::Create("/inputfs/input.mp4", AP4_FileByteStream::STREAM_MODE_READ, input);
     if (AP4_FAILED(result)) {
         fprintf(stderr, "ERROR: cannot open input (%d)\n", result);
         goto end;
     }
     
 	// create the output stream
-    result = AP4_FileByteStream::Create(*args++, AP4_FileByteStream::STREAM_MODE_WRITE, output);
+    result = AP4_FileByteStream::Create("outputfs/output.aac", AP4_FileByteStream::STREAM_MODE_WRITE, output);
     if (AP4_FAILED(result)) {
         fprintf(stderr, "ERROR: cannot open output (%d)\n", result);
         goto end;
@@ -282,16 +264,6 @@ main(int argc, char** argv)
             return_value = 0;
             break;
         }
-
-        case AP4_SampleDescription::TYPE_PROTECTED: 
-            if (!key_option) {
-                fprintf(stderr, "ERROR: encrypted tracks require a key\n");
-                return_value = 1;
-                break;
-            }
-            DecryptAndWriteSamples(audio_track, sample_description, key, output);
-            result = 0;
-            break;
 
         default:
             fprintf(stderr, "ERROR: unsupported sample type\n");
