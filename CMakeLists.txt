@@ -16,6 +16,7 @@ set(SOURCE_CORE ${SOURCE_ROOT}/Core)
 set(SOURCE_CRYPTO ${SOURCE_ROOT}/Crypto)
 set(SOURCE_METADATA ${SOURCE_ROOT}/MetaData)
 set(SOURCE_SYSTEM ${SOURCE_ROOT}/System)
+set(SOURCE_JAVASCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/Source/JavaScript)
 
 # Compiler warning and optimization flags
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
@@ -74,6 +75,12 @@ foreach(app ${BENTO4_APPS})
   string(TOLOWER ${app} binary_name)
   add_executable(${binary_name} ${SOURCE_ROOT}/Apps/${app}/${app}.cpp)
   target_link_libraries(${binary_name} ap4)
+
+  if (EMSCRIPTEN)
+    target_link_libraries(${binary_name} -lnodefs.js -lworkerfs.js)
+    target_link_libraries(${binary_name} "-s \"EXPORTED_RUNTIME_METHODS=['FS','MEMFS','NODEFS','WORKERFS']\"")
+    target_link_libraries(${binary_name} --extern-pre-js ${SOURCE_JAVASCRIPT}/pre.js)
+  endif()
 
   if(MSVC)
     set_property(TARGET ${binary_name} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
